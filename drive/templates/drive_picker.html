@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Google Drive Picker</title>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script>
+        function onApiLoad() {
+            gapi.load('picker', {'callback': createPicker});
+        }
+
+        function createPicker() {
+            var oauthToken = "{{ request.user.drive_token.access_token }}";  // Get user's access token
+
+            if (!oauthToken) {
+                alert("Please authenticate with Google Drive first.");
+                return;
+            }
+
+            var picker = new google.picker.PickerBuilder()
+                .setOAuthToken(oauthToken)
+                .setDeveloperKey("{{ GOOGLE_API_KEY }}")  // Your API Key
+                .addView(google.picker.ViewId.DOCS)
+                .setCallback(pickerCallback)
+                .build();
+
+            picker.setVisible(true);
+        }
+
+        function pickerCallback(data) {
+            if (data.action === google.picker.Action.PICKED) {
+                var fileId = data.docs[0].id;
+                alert("File Selected: " + fileId);
+                
+                // Redirect to Django download view with file ID
+                window.location.href = `/drive/download/${fileId}/`;
+            }
+        }
+    </script>
+</head>
+<body>
+    <h2>Select a File from Google Drive</h2>
+    <button onclick="onApiLoad()">Open Google Drive Picker</button>
+</body>
+</html>

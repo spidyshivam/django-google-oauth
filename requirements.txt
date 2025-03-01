@@ -19,11 +19,13 @@ google-auth==2.38.0
 google-auth-httplib2==0.2.0
 google-auth-oauthlib==1.2.1
 googleapis-common-protos==1.68.0
+gunicorn==23.0.0
 httplib2==0.22.0
 hyperlink==21.0.0
 idna==3.10
 incremental==24.7.2
 oauthlib==3.2.2
+packaging==24.2
 proto-plus==1.26.0
 protobuf==5.29.3
 pyasn1==0.6.1

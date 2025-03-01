@@ -20,8 +20,7 @@ class GoogleOAuthToken(models.Model):
         self.access_token = token_data.get("access_token", self.access_token)
         self.token_type = token_data.get("token_type", self.token_type)
         
-        # Calculate new expiry time
-        expires_in = token_data.get("expires_in", 3600)  # Default to 1 hour
+        expires_in = token_data.get("expires_in", 3600)  
         self.expires_at = now() + datetime.timedelta(seconds=expires_in)
 
         if "refresh_token" in token_data:

@@ -9,7 +9,6 @@ from .models import GoogleOAuthToken
 from django.utils.timezone import now
 from django.conf import settings
 import datetime
-import os
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -22,7 +21,6 @@ from googleapiclient.http import MediaIoBaseUpload
 
 
 
-# Step 1: Redirect user to Google login
 def google_login(request):
     auth_url = (
         f"{settings.GOOGLE_AUTH_URL}"
@@ -35,13 +33,11 @@ def google_login(request):
     )
     return redirect(auth_url)
 
-# Step 2: Google OAuth Callback
 def google_callback(request):
     code = request.GET.get("code")
     if not code:
         return JsonResponse({"error": "Authorization code not found"}, status=400)
 
-    # Exchange authorization code for access token
     token_data = {
         "client_id": settings.DRIVE_CLIENT_ID,
         "client_secret": settings.DRIVE_CLIENT_SECRET,
@@ -63,7 +59,6 @@ def google_callback(request):
     if not access_token:
         return JsonResponse({"error": "Access token not received"}, status=400)
     
-    # Fetch user info from Google
     user_info_response = requests.get(
         "https://www.googleapis.com/oauth2/v3/userinfo",
         headers={"Authorization": f"Bearer {access_token}"}
@@ -76,18 +71,15 @@ def google_callback(request):
     if not email:
         return JsonResponse({"error": "Failed to get user email from Google"}, status=400)
 
-    # Create or get Django user
     user, created = User.objects.get_or_create(
         username=email, 
         defaults={"email": email, "first_name": name}
     )
     login(request, user)
 
-    # Calculate expiration time
     expires_at = now() + datetime.timedelta(seconds=expires_in)
     token_type = token_json.get("token_type", "Bearer")
 
-    # Create or update GoogleOAuthToken with all required fields in defaults
     token_obj, created = GoogleOAuthToken.objects.get_or_create(
         user=user,
         defaults={
@@ -98,7 +90,6 @@ def google_callback(request):
         }
     )
 
-    # Update the token if it already existed
     if not created:
         token_obj.access_token = access_token
         token_obj.token_type = token_type
@@ -122,17 +113,14 @@ def home(request):
 def upload_file(request):
     """Upload a file to Google Drive using stored OAuth tokens."""
 
-    # Get the logged-in user's GoogleOAuthToken
     try:
         token_obj = GoogleOAuthToken.objects.get(user=request.user)
     except GoogleOAuthToken.DoesNotExist:
-        return redirect("drive_login")  # Redirect to OAuth flow if no token found
+        return redirect("drive_login")  
 
-    # Refresh token if expired
     if token_obj.is_expired():
-        return redirect("drive_login")  # Redirect to OAuth flow if token is expired
+        return redirect("drive_login")
 
-    # Load credentials from the database
     credentials = Credentials(
         token=token_obj.access_token,
         refresh_token=token_obj.refresh_token,
@@ -142,13 +130,11 @@ def upload_file(request):
         scopes=["https://www.googleapis.com/auth/drive.file"],
     )
 
-    # Initialize Google Drive API service
     service = build("drive", "v3", credentials=credentials)
 
     if request.method == "POST" and request.FILES.get("file"):
         uploaded_file = request.FILES["file"]
 
-        # Convert uploaded file into a byte stream for direct upload
         file_stream = io.BytesIO(uploaded_file.read())
         media = MediaIoBaseUpload(file_stream, mimetype=uploaded_file.content_type, resumable=True)
 
@@ -173,7 +159,7 @@ def google_drive_picker(request):
         "GOOGLE_CLIENT_ID": settings.GOOGLE_CLIENT_ID,
     })
 
-logger = logging.getLogger(__name__)  # Set up loggin
+logger = logging.getLogger(__name__)
 
 
 
@@ -192,16 +178,14 @@ def download_drive_file(request, file_id):
         creds = Credentials(token.access_token)
         drive_service = googleapiclient.discovery.build("drive", "v3", credentials=creds)
 
-        # Get file metadata
         file_metadata = drive_service.files().get(fileId=file_id).execute()
         file_name = file_metadata.get("name", "downloaded_file")
         mime_type = file_metadata.get("mimeType", "")
 
-        # List of Google Docs editors files that need exporting
         export_formats = {
-            "application/vnd.google-apps.document": "application/pdf",  # Google Docs -> PDF
-            "application/vnd.google-apps.spreadsheet": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  # Google Sheets -> XLSX
-            "application/vnd.google-apps.presentation": "application/pdf",  # Google Slides -> PDF
+            "application/vnd.google-apps.document": "application/pdf", 
+            "application/vnd.google-apps.spreadsheet": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+            "application/vnd.google-apps.presentation": "application/pdf", 
         }
 
         if mime_type in export_formats:

@@ -63,6 +63,9 @@ GOOGLE_API_KEY="your-google-api-key"
 ```sh
 python manage.py runserver
 ```
+/drive/ is the home , from there you can access everything 
+
+deployed at - https://django-google-oauth.onrender.com/drive/
 
 ## Contributing
 Feel free to fork and contribute to this project by submitting a pull request.

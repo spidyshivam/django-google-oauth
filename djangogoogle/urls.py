@@ -21,4 +21,5 @@ urlpatterns = [
     path('', include('gauth.urls')),
     path('drive/', include('drive.urls')),
     path('admin/', admin.site.urls),
+    path('chat/', include('chat.urls')),
 ]

@@ -6,13 +6,15 @@
     <title>Google Drive Uploader</title>
 </head>
 <body>
-    <h1>Welcome to Google Drive Uploader</h1>
+    <h1>Welcome to G assignment</h1>
     
+        <a href="{% url 'google-login' %}"><button>Google OAuth Endpoint</button></a>
     {% if user.is_authenticated %}
         <p>Logged in as: {{ user.username }}</p>
         <a href="{% url 'drive_logout' %}">Logout</a>
         <a href="{% url 'upload_file' %}"><button>Upload File</button></a>
         <a href="{% url 'google_drive_picker' %}"><button>Download File</button></a>
+        <a href="{% url 'chat_list' %}"><button>Chat List</button></a>
     {% else %}
         <a href="{% url 'drive_login' %}"><button>Login</button></a>
     {% endif %}

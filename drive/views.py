@@ -10,12 +10,15 @@ from django.utils.timezone import now
 from django.conf import settings
 import datetime
 import os
-import googleapiclient.discovery
+from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from django.core.files.storage import default_storage
 from django.http import StreamingHttpResponse, HttpResponse
 import logging
+import io
+from googleapiclient.http import MediaIoBaseUpload
+
 
 
 
@@ -60,7 +63,7 @@ def google_callback(request):
     if not access_token:
         return JsonResponse({"error": "Access token not received"}, status=400)
     
-     # Fetch user info from Google
+    # Fetch user info from Google
     user_info_response = requests.get(
         "https://www.googleapis.com/oauth2/v3/userinfo",
         headers={"Authorization": f"Bearer {access_token}"}
@@ -74,29 +77,37 @@ def google_callback(request):
         return JsonResponse({"error": "Failed to get user email from Google"}, status=400)
 
     # Create or get Django user
-    user, created = User.objects.get_or_create(username=email, defaults={"email": email, "first_name": name})
+    user, created = User.objects.get_or_create(
+        username=email, 
+        defaults={"email": email, "first_name": name}
+    )
     login(request, user)
 
-    # Log in the usern
-    expires_at =  now() + datetime.timedelta(seconds=expires_in)
+    # Calculate expiration time
+    expires_at = now() + datetime.timedelta(seconds=expires_in)
     token_type = token_json.get("token_type", "Bearer")
-    token_obj, created = GoogleOAuthToken.objects.get_or_create(user=user)
-    token_obj.access_token=access_token
-    token_obj.token_type=token_type
-    token_obj.expires_at=expires_at
-    if refresh_token:
-        token_obj.refresh_token = refresh_token
 
-    token_obj.save()
-    
-    
+    # Create or update GoogleOAuthToken with all required fields in defaults
+    token_obj, created = GoogleOAuthToken.objects.get_or_create(
+        user=user,
+        defaults={
+            'access_token': access_token,
+            'token_type': token_type,
+            'expires_at': expires_at,
+            'refresh_token': refresh_token
+        }
+    )
 
-    # Fetch user info
-    #headers = {"Authorization": f"Bearer {access_token}"}
-    #user_response = requests.get(settings.GOOGLE_USER_INFO_URL, headers=headers)
-    #user_data = user_response.json()
+    # Update the token if it already existed
+    if not created:
+        token_obj.access_token = access_token
+        token_obj.token_type = token_type
+        token_obj.expires_at = expires_at
+        if refresh_token:
+            token_obj.refresh_token = refresh_token
+        token_obj.save()
+
     return redirect('/drive/')
-
 
 
 @login_required
@@ -110,7 +121,7 @@ def home(request):
 @login_required
 def upload_file(request):
     """Upload a file to Google Drive using stored OAuth tokens."""
-    
+
     # Get the logged-in user's GoogleOAuthToken
     try:
         token_obj = GoogleOAuthToken.objects.get(user=request.user)
@@ -136,19 +147,23 @@ def upload_file(request):
 
     if request.method == "POST" and request.FILES.get("file"):
         uploaded_file = request.FILES["file"]
-        file_path = default_storage.save(uploaded_file.name, uploaded_file)
+
+        # Convert uploaded file into a byte stream for direct upload
+        file_stream = io.BytesIO(uploaded_file.read())
+        media = MediaIoBaseUpload(file_stream, mimetype=uploaded_file.content_type, resumable=True)
 
         file_metadata = {"name": uploaded_file.name}
-        media = service.files().create(
+        uploaded_file = service.files().create(
             body=file_metadata,
-            media_body=file_path,
+            media_body=media,
             fields="id",
         ).execute()
 
-        file_id = media.get("id")
-        return render(request, "upload.html", {"message": f"File uploaded: {file_id}"})
+        file_id = uploaded_file.get("id")
+        return render(request, "upload.html", {"message": f"File uploaded successfully: {file_id}"})
 
     return render(request, "upload.html")
+
 
 @login_required
 def google_drive_picker(request):

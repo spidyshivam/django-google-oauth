@@ -10,6 +10,7 @@ from django.utils.timezone import now
 from django.conf import settings
 import datetime
 from googleapiclient.discovery import build
+import googleapiclient.discovery
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from django.core.files.storage import default_storage

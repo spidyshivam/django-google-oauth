@@ -148,7 +148,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-GOOGLE_REDIRECT_URI = "http://localhost:8000/auth/callback/"
+GOOGLE_REDIRECT_URI = os.getnenv("GOOGLE_REDIRECT_URI")
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/auth"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GOOGLE_USER_INFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
@@ -156,7 +156,8 @@ GOOGLE_USER_INFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
 
 DRIVE_CLIENT_ID = os.getenv("DRIVE_CLIENT_ID")
 DRIVE_CLIENT_SECRET = os.getenv("DRIVE_CLIENT_SECRET")
-DRIVE_REDIRECT_URI = 'http://localhost:8000/drive/auth/callback/'
+DRIVE_REDIRECT_URI = os.getenv("DRIVE_REDIRECT_URI")
+
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 

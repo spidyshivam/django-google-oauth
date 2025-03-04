@@ -15,6 +15,7 @@
         <a href="{% url 'upload_file' %}"><button>Upload File</button></a>
         <a href="{% url 'google_drive_picker' %}"><button>Download File</button></a>
         <a href="{% url 'chat_list' %}"><button>Chat List</button></a>
+        <a href="{% url 'get_emails' %}"><button>Check Recent Emails</button></a>
     {% else %}
         <a href="{% url 'drive_login' %}"><button>Login</button></a>
     {% endif %}

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recent Emails</title>
+</head>
+<body>
+    <div class="container">
+        <h2>Recent Emails</h2>
+        {% if emails %}
+            {% for email in emails %}
+                <div class="email">
+                    <h3>From: {{ email.from }}</h3>
+                    <p><strong>Subject:</strong> {{ email.subject }}</p>
+                    <p><strong>Snippet:</strong> {{ email.snippet }}</p>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No recent emails found.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

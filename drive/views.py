@@ -28,7 +28,7 @@ def google_login(request):
         f"?client_id={settings.DRIVE_CLIENT_ID}"
         f"&redirect_uri={settings.DRIVE_REDIRECT_URI}"
         f"&response_type=code"
-        f"&scope=openid email profile https://www.googleapis.com/auth/drive"
+        f"&scope=openid email profile https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/gmail.readonly"
         f"&access_type=offline"
         f"&prompt=consent"
     )
@@ -204,3 +204,48 @@ def download_drive_file(request, file_id):
     except Exception as e:
         logger.error(f"Error downloading file from Google Drive: {e}", exc_info=True)
         return HttpResponse(f"Error downloading file: {str(e)}", status=500)
+
+
+@login_required
+def fetch_recent_emails(request):
+    """Fetch top 5 recent emails from Gmail"""
+    try:
+        user = request.user
+        user_token = GoogleOAuthToken.objects.get(user=user)
+
+        # Check if token is expired
+        if user_token.expires_at < now():
+                return JsonResponse({"error": "Failed to refresh access token"}, status=400)
+        else:
+            access_token = user_token.access_token
+
+        # Fetch recent emails
+        headers = {"Authorization": f"Bearer {access_token}"}
+        params = {"maxResults": 5, "labelIds": "INBOX"}
+        response = requests.get(settings.GMAIL_API_URL, headers=headers, params=params)
+
+        if response.status_code == 200:
+            messages = response.json().get("messages", [])
+
+            # Fetch details of each email
+            email_data = []
+            for msg in messages:
+                msg_id = msg["id"]
+                email_response = requests.get(f"{settings.GMAIL_API_URL}/{msg_id}", headers=headers)
+                if email_response.status_code == 200:
+                    email_info = email_response.json()
+                    headers_list = email_info.get("payload", {}).get("headers", [])
+                    
+                    # Extract sender and subject
+                    sender = next((h["value"] for h in headers_list if h["name"] == "From"), "Unknown Sender")
+                    subject = next((h["value"] for h in headers_list if h["name"] == "Subject"), "No Subject")
+                    snippet = email_info.get("snippet", "")
+
+                    email_data.append({"id": msg_id, "from": sender, "subject": subject, "snippet": snippet})
+
+            return render(request, "get_emails.html", {"emails": email_data})
+
+        return JsonResponse({"error": "Failed to fetch emails"}, status=response.status_code)
+
+    except GoogleOAuthToken.DoesNotExist:
+        return JsonResponse({"error": "Google OAuth token not found for this user"}, status=400)

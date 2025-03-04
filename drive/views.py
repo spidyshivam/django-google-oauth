@@ -242,7 +242,7 @@ def fetch_recent_emails(request):
 
                 email_data.append({"id": msg_id, "from": sender, "subject": subject, "snippet": snippet})
 
-        return render(request, "get_emails.html", {"emails": email_data})
+        return render(request, "get_emails.html", {"emails": email_data, "messages": messages})
 
 
     except GoogleOAuthToken.DoesNotExist:

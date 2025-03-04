@@ -8,6 +8,12 @@
 <body>
     <div class="container">
         <h2>Recent Emails</h2>
+        {% if messages %}
+            {% for msg in messages %}
+                <p>{{ msg.id }}</p>
+        {% else }
+            <p>no messages</p>
+        {% endif %}
         {% if emails %}
             {% for email in emails %}
                 <div class="email">

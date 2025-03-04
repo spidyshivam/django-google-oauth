@@ -221,7 +221,7 @@ def fetch_recent_emails(request):
 
         # Fetch recent emails
         headers = {"Authorization": f"Bearer {access_token}"}
-        params = {"maxResults": 5, "labelIds": "INBOX"}
+        params = {"maxResults": 5, "labelIds": "ALL"}
         response = requests.get(settings.GMAIL_API_URL, headers=headers, params=params)
 
         messages = response.json().get("messages", [])

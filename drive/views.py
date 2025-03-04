@@ -231,16 +231,15 @@ def fetch_recent_emails(request):
         for msg in messages:
             msg_id = msg["id"]
             email_response = requests.get(f"{settings.GMAIL_API_URL}/{msg_id}", headers=headers)
-            if email_response.status_code == 200:
-                email_info = email_response.json()
-                headers_list = email_info.get("payload", {}).get("headers", [])
-                
-                # Extract sender and subject
-                sender = next((h["value"] for h in headers_list if h["name"] == "From"), "Unknown Sender")
-                subject = next((h["value"] for h in headers_list if h["name"] == "Subject"), "No Subject")
-                snippet = email_info.get("snippet", "")
+            email_info = email_response.json()
+            headers_list = email_info.get("payload", {}).get("headers", [])
+            
+            # Extract sender and subject
+            sender = next((h["value"] for h in headers_list if h["name"] == "From"), "Unknown Sender")
+            subject = next((h["value"] for h in headers_list if h["name"] == "Subject"), "No Subject")
+            snippet = email_info.get("snippet", "")
 
-                email_data.append({"id": msg_id, "from": sender, "subject": subject, "snippet": snippet})
+            email_data.append({"id": msg_id, "from": sender, "subject": subject, "snippet": snippet})
 
         return render(request, "get_emails.html", {"emails": email_data, "messages": messages})
 
